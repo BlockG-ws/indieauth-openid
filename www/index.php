@@ -198,11 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $redirect_uri = verifyUrlParameter($_GET, 'redirect_uri');
     $client_id    = verifyUrlParameter($_GET, 'client_id');
     $state        = null;
-    if (isset($_GET['state'])) {
+    if (isset($_GET['state']) && is_string($_GET['state'])) {
         $state = $_GET['state'];
     }
     $response_type = 'id';
-    if (isset($_GET['response_type'])) {
+    if (isset($_GET['response_type']) && is_string($_GET['response_type'])) {
         $response_type = $_GET['response_type'];
     }
     if ($response_type !== 'id') {
