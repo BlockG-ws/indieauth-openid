@@ -3,6 +3,7 @@
     "description": "IndieAuth to OpenID proxy",
     "type": "project",
     "require": {
+        "php": "^8.0",
         "pear/net_url2": "^2.2",
         "pear/openid": "^0.4.0"
     },
