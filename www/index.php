@@ -73,7 +73,7 @@ function create_token(string $me, string $redirect_uri, string $client_id, ?stri
             ':me' => $me,
             ':redirect_uri' => $redirect_uri,
             ':client_id' => $client_id,
-            ':state' => (string) $state,
+            ':state' => $state,
             ':created' => date('c')
         ]
     );
