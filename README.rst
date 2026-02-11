@@ -35,7 +35,7 @@ file name - e.g. ``indieauth-openid-0.1.0.phar.config.php``.
 Dependencies
 ============
 
-* PHP 8.0+
+* PHP 8.1+
 * PDO with sqlite3 driver
 * PEAR libraries:
 

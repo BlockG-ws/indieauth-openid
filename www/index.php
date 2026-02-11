@@ -6,7 +6,7 @@ declare(strict_types=1);
  * IndieAuth to OpenID proxy.
  * Proxies IndieAuth authorization requests to one's OpenID server
  *
- * PHP version 8.0
+ * PHP version 8.1
  *
  * @package indieauth-openid
  * @author  Christian Weiske <cweiske@cweiske.de>
