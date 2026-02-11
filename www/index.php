@@ -1,9 +1,12 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * IndieAuth to OpenID proxy.
  * Proxies IndieAuth authorization requests to one's OpenID server
  *
- * PHP version 5
+ * PHP version 8.1
  *
  * @package indieauth-openid
  * @author  Christian Weiske <cweiske@cweiske.de>
@@ -14,8 +17,8 @@
  * @link    https://indieauth.com/developers
  */
 header('IndieAuth: authorization_endpoint');
-if (($_SERVER['REQUEST_METHOD'] == 'GET' || $_SERVER['REQUEST_METHOD'] == 'HEAD')
-    && count($_GET) == 0
+if (($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'HEAD')
+    && count($_GET) === 0
 ) {
     include 'about.php';
     exit();
@@ -23,10 +26,10 @@ if (($_SERVER['REQUEST_METHOD'] == 'GET' || $_SERVER['REQUEST_METHOD'] == 'HEAD'
 
 require __DIR__ . '/../vendor/autoload.php';
 
-function loadDb()
+function loadDb(): PDO
 {
     $pharFile = \Phar::running();
-    if ($pharFile == '') {
+    if ($pharFile === '') {
         $dsn = 'sqlite:' . __DIR__ . '/../data/tokens.sq3';
         $cfgFilePath = __DIR__ . '/config.php';
     } else {
@@ -52,32 +55,32 @@ created DATE
 )");
     //clean old tokens
     $stmt = $db->prepare('DELETE FROM authtokens WHERE created < :created');
-    $stmt->execute(array(':created' => date('c', time() - 60)));
+    $stmt->execute([':created' => date('c', time() - 60)]);
 
     return $db;
 }
 
-function create_token($me, $redirect_uri, $client_id, $state)
+function create_token(string $me, string $redirect_uri, string $client_id, ?string $state): string
 {
-    $code = base64_encode(openssl_random_pseudo_bytes(32));
+    $code = base64_encode(random_bytes(32));
     $db = loadDb();
     $db->prepare(
         'INSERT INTO authtokens (code, me, redirect_uri, client_id, state, created)'
         . ' VALUES(:code, :me, :redirect_uri, :client_id, :state, :created)'
     )->execute(
-        array(
+        [
             ':code' => $code,
             ':me' => $me,
             ':redirect_uri' => $redirect_uri,
             ':client_id' => $client_id,
-            ':state' => (string) $state,
+            ':state' => $state,
             ':created' => date('c')
-        )
+        ]
     );
     return $code;
 }
 
-function validate_token($code, $redirect_uri, $client_id)
+function validate_token(string $code, string $redirect_uri, string $client_id): string|false
 {
     $db = loadDb();
     $stmt = $db->prepare(
@@ -88,17 +91,17 @@ function validate_token($code, $redirect_uri, $client_id)
         . ' AND created >= :created'
     );
     $stmt->execute(
-        array(
+        [
             ':code'         => $code,
             ':redirect_uri' => $redirect_uri,
             ':client_id'    => $client_id,
             ':created'      => date('c', time() - 60)
-        )
+        ]
     );
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     $stmt = $db->prepare('DELETE FROM authtokens WHERE code = :code');
-    $stmt->execute(array(':code' => $code));
+    $stmt->execute([':code' => $code]);
 
     if ($row === false) {
         return false;
@@ -106,7 +109,7 @@ function validate_token($code, $redirect_uri, $client_id)
     return $row['me'];
 }
 
-function error($msg)
+function error(string $msg): never
 {
     header('HTTP/1.0 400 Bad Request');
     header('Content-type: text/plain; charset=utf-8');
@@ -115,7 +118,7 @@ function error($msg)
     exit(1);
 }
 
-function verifyUrlParameter($givenParams, $paramName)
+function verifyUrlParameter(array $givenParams, string $paramName): string
 {
     if (!isset($givenParams[$paramName])) {
         error('"' . $paramName . '" parameter missing');
@@ -131,7 +134,7 @@ function verifyUrlParameter($givenParams, $paramName)
     return $givenParams[$paramName];
 }
 
-function getBaseUrl()
+function getBaseUrl(): string
 {
     if (!isset($_SERVER['REQUEST_SCHEME'])) {
         $_SERVER['REQUEST_SCHEME'] = 'http';
@@ -146,17 +149,17 @@ session_start();
 $returnTo = getBaseUrl();
 $realm    = getBaseUrl();
 
-if (isset($_GET['openid_mode']) && $_GET['openid_mode'] != '') {
+if (isset($_GET['openid_mode']) && $_GET['openid_mode'] !== '') {
     //verify openid response
     if (!count($_POST)) {
-        list(, $queryString) = explode('?', $_SERVER['REQUEST_URI']);
+        [, $queryString] = explode('?', $_SERVER['REQUEST_URI']);
     } else {
         $queryString = file_get_contents('php://input');
     }
 
     $message = new \OpenID_Message($queryString, \OpenID_Message::FORMAT_HTTP);
     $id      = $message->get('openid.claimed_id');
-    if (OpenID::normalizeIdentifier($id) != OpenID::normalizeIdentifier($_SESSION['me'])) {
+    if (OpenID::normalizeIdentifier($id) !== OpenID::normalizeIdentifier($_SESSION['me'])) {
         error(
             sprintf(
                 'Given identity URL "%s" and claimed OpenID "%s" do not match',
@@ -190,19 +193,19 @@ if (isset($_GET['openid_mode']) && $_GET['openid_mode'] != '') {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $me           = verifyUrlParameter($_GET, 'me');
     $redirect_uri = verifyUrlParameter($_GET, 'redirect_uri');
     $client_id    = verifyUrlParameter($_GET, 'client_id');
     $state        = null;
-    if (isset($_GET['state'])) {
+    if (isset($_GET['state']) && is_string($_GET['state'])) {
         $state = $_GET['state'];
     }
     $response_type = 'id';
-    if (isset($_GET['response_type'])) {
+    if (isset($_GET['response_type']) && is_string($_GET['response_type'])) {
         $response_type = $_GET['response_type'];
     }
-    if ($response_type != 'id') {
+    if ($response_type !== 'id') {
         error('unsupported response_type: ' . $response_type);
     }
 
@@ -227,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } catch (Exception $e) {
         error(get_class($e) . ': ' . $e->getMessage());
     }
-} else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+} else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $redirect_uri = verifyUrlParameter($_POST, 'redirect_uri');
     $client_id    = verifyUrlParameter($_POST, 'client_id');
     if (!isset($_POST['code'])) {

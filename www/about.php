@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS']) {
     $prot = 'https';
 } else {

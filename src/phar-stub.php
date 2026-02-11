@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * Phar stub file for indieauth-openid. Handles startup of the .phar file.
  */
@@ -17,9 +20,9 @@ $web = 'www/index.php';
  *
  * @return string Internal path.
  */
-function rewritePath($path)
+function rewritePath(string $path): string
 {
-    if ($path == '') {
+    if ($path === '') {
         //we need a / to get the relative links on index.php work
         if (!isset($_SERVER['REQUEST_SCHEME'])) {
             $_SERVER['REQUEST_SCHEME'] = 'http';
@@ -30,17 +33,17 @@ function rewritePath($path)
             . '/';
         header('Location: ' . $url);
         exit(0);
-    } else if ($path == '/') {
+    } else if ($path === '/') {
         return 'www/index.php';
     }
 
-    if (substr($path, -4) == '.css') {
+    if (substr($path, -4) === '.css') {
         header('Expires: ' . date('r', time() + 86400 * 7));
     }
     return 'www' . $path;
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'HEAD') {
+if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {
     //work around https://bugs.php.net/bug.php?id=51918
     header('IndieAuth: authorization_endpoint');
     exit();
@@ -50,7 +53,7 @@ set_include_path(
     'phar://' . __FILE__
     . PATH_SEPARATOR . 'phar://' . __FILE__ . '/lib/'
 );
-Phar::webPhar(null, $web, null, array(), 'rewritePath');
+Phar::webPhar(null, $web, null, [], 'rewritePath');
 
 //TODO: implement CLI setup check
 echo "indieauth-openid can only be used in the browser\n";
